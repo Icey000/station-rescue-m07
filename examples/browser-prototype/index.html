@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>停电救援：M-07 | Station Rescue: M-07</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #07111f; color: #e8f1ff; }
+    main { width: min(92vw, 760px); text-align: center; }
+    h1 { margin-bottom: .25rem; }
+    .subtitle { margin-top: 0; color: #9fb4ce; }
+    #hud { display: flex; justify-content: space-between; gap: 1rem; margin: 1rem 0 .5rem; padding: .75rem 1rem; background: #10243c; border: 1px solid #294b70; border-radius: 10px; }
+    canvas { width: 100%; max-width: 720px; aspect-ratio: 12 / 7; display: block; background: #0c1a2a; border: 2px solid #4c7097; border-radius: 10px; image-rendering: pixelated; }
+    button { margin-top: 1rem; padding: .65rem 1rem; border: 0; border-radius: 8px; background: #2d8cff; color: white; cursor: pointer; font-weight: 700; }
+    button:hover { background: #55a4ff; }
+    #message { min-height: 1.5rem; color: #ffd166; font-weight: 700; }
+    small { color: #8fa5bd; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>停电救援：M-07</h1>
+    <p class="subtitle">Station Rescue: M-07 · A1.0</p>
+    <div id="hud"><span id="status">电池：0 / 3</span><span id="lives">生命：3</span></div>
+    <canvas id="game" width="720" height="420" aria-label="M-07 游戏画面"></canvas>
+    <p id="message">收集所有应急电池，然后前往蓝色出口。</p>
+    <button id="restart">重新开始</button>
+    <p><small>方向键 / WASD 移动 · 绿色：救援员 · 黄色：电池 · 红色：危险 · 蓝色：出口</small></p>
+  </main>
+  <script>
+    const canvas = document.querySelector('#game');
+    const ctx = canvas.getContext('2d');
+    const status = document.querySelector('#status');
+    const livesText = document.querySelector('#lives');
+    const message = document.querySelector('#message');
+    const keys = new Set();
+    const start = { x: 48, y: 190 };
+    const exit = { x: 650, y: 165, w: 42, h: 90 };
+    const hazards = [
+      { x: 170, y: 70, w: 105, h: 55 },
+      { x: 345, y: 285, w: 120, h: 55 },
+      { x: 505, y: 75, w: 85, h: 58 }
+    ];
+    let player, batteries, lives, running;
+
+    function reset() {
+      player = { x: start.x, y: start.y, size: 24, speed: 3.4, invulnerable: 0 };
+      batteries = [
+        { x: 125, y: 80, collected: false },
+        { x: 390, y: 105, collected: false },
+        { x: 555, y: 320, collected: false }
+      ];
+      lives = 3;
+      running = true;
+      message.textContent = '收集所有应急电池，然后前往蓝色出口。';
+      updateHud();
+    }
+
+    function updateHud() {
+      const collected = batteries.filter(b => b.collected).length;
+      status.textContent = `电池：${collected} / ${batteries.length}`;
+      livesText.textContent = `生命：${lives}`;
+    }
+
+    function intersects(a, b) {
+      return a.x < b.x + b.w && a.x + a.size > b.x && a.y < b.y + b.h && a.y + a.size > b.y;
+    }
+
+    function update() {
+      if (!running) return;
+      let dx = 0, dy = 0;
+      if (keys.has('arrowleft') || keys.has('a')) dx--;
+      if (keys.has('arrowright') || keys.has('d')) dx++;
+      if (keys.has('arrowup') || keys.has('w')) dy--;
+      if (keys.has('arrowdown') || keys.has('s')) dy++;
+      if (dx && dy) { dx *= .707; dy *= .707; }
+      player.x = Math.max(8, Math.min(canvas.width - player.size - 8, player.x + dx * player.speed));
+      player.y = Math.max(8, Math.min(canvas.height - player.size - 8, player.y + dy * player.speed));
+      if (player.invulnerable > 0) player.invulnerable--;
+
+      batteries.forEach(b => {
+        const target = { x: b.x - 8, y: b.y - 8, w: 16, h: 16 };
+        if (!b.collected && intersects(player, { ...target, size: 0 })) b.collected = true;
+      });
+      if (player.invulnerable === 0 && hazards.some(h => intersects(player, h))) {
+        lives--;
+        player.x = start.x; player.y = start.y; player.invulnerable = 90;
+        if (lives <= 0) { running = false; message.textContent = '救援失败，点击“重新开始”再次尝试。'; }
+      }
+      const collected = batteries.every(b => b.collected);
+      if (collected && intersects(player, exit)) { running = false; message.textContent = '救援成功！M-07 重新恢复了应急供电。'; }
+      updateHud();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#0c1a2a'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#183653'; ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 30) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+      for (let y = 0; y < canvas.height; y += 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+      hazards.forEach(h => { ctx.fillStyle = '#9d3348'; ctx.fillRect(h.x, h.y, h.w, h.h); ctx.fillStyle = '#e66b78'; ctx.font = '14px sans-serif'; ctx.fillText('危险', h.x + 30, h.y + 32); });
+      ctx.fillStyle = '#2676c9'; ctx.fillRect(exit.x, exit.y, exit.w, exit.h); ctx.fillStyle = '#c7e6ff'; ctx.font = '14px sans-serif'; ctx.fillText('出口', exit.x + 7, exit.y + 48);
+      batteries.forEach(b => { if (!b.collected) { ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(b.x, b.y, 9, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#fff1b8'; ctx.fillRect(b.x - 3, b.y - 5, 6, 10); } });
+      if (player.invulnerable % 12 < 6) { ctx.fillStyle = '#57e389'; ctx.fillRect(player.x, player.y, player.size, player.size); ctx.fillStyle = '#082016'; ctx.fillRect(player.x + 5, player.y + 6, 4, 4); ctx.fillRect(player.x + 15, player.y + 6, 4, 4); }
+    }
+
+    function loop() { update(); draw(); requestAnimationFrame(loop); }
+    window.addEventListener('keydown', e => { const key = e.key.toLowerCase(); if (['arrowleft','arrowright','arrowup','arrowdown','w','a','s','d'].includes(key)) { e.preventDefault(); keys.add(key); } });
+    window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
+    document.querySelector('#restart').addEventListener('click', reset);
+    reset(); loop();
+  </script>
+</body>
+</html>

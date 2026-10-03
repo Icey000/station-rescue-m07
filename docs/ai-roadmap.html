@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>停电救援：B、C、D 详解与资源检查</title>
+<style>
+body{margin:0;background:#f5f6f2;color:#25302a;font:17px/1.75 system-ui,'Microsoft YaHei',sans-serif}main{max-width:960px;margin:auto;padding:32px 24px 70px}h1{font-size:30px;line-height:1.35;margin:14px 0}h2{font-size:24px;line-height:1.45;margin:28px 0 12px}h3{font-size:19px;margin:21px 0 6px}p{margin:12px 0}a{color:#256348}li{margin:9px 0}ul,ol{padding-left:25px}section{border-top:1px solid #ccd5ca;margin-top:28px;padding-top:4px}code{font-size:.92em;background:#e9ede5;padding:2px 5px;overflow-wrap:anywhere}.small{font-size:14px;color:#5d695f}.intro{border-left:4px solid #347355;padding:8px 20px;background:#e9efe6}.route,.flow{display:flex;flex-wrap:wrap;gap:12px;padding:0;list-style:none;margin:22px 0}.route a{flex:1;min-width:150px;padding:12px 16px;border:1px solid #ccd5ca;text-decoration:none;background:white}.route b{display:block;font-size:22px}.flow li{flex:1;min-width:150px;margin:0;padding:8px 0;border-bottom:3px solid #b7c8b4}.flow b{display:block}.check{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}.check article{border-bottom:1px solid #dce2d8;padding-bottom:8px}.check h3{margin-top:10px}.check p{margin:6px 0 14px}details{border-top:1px solid #dce2d8;padding:12px 0}summary{font-weight:600;cursor:pointer;padding:4px 0}details li{margin:12px 0}figure{margin:18px 0}img{display:block;width:100%;height:auto;background:#0b1820}figcaption{font-size:14px;color:#5d695f;margin-top:7px}.outcome{border-left:3px solid #347355;padding-left:16px}.compare li{margin:14px 0}
+@media(max-width:600px){main{padding:22px 18px 50px}h1{font-size:26px}h2{font-size:22px}.check{grid-template-columns:1fr}.route a{min-width:120px}.flow{display:block}.flow li{margin:12px 0}code{word-break:break-word}}
+</style></head>
+<body><main>
+<a href="../index.html">返回统一入口</a>
+<p class="small">工程实查 · 2026-10-03 · Station Rescue: M-07</p>
+<h1>B、C、D 到底做什么？现有游戏够不够？</h1>
+<div class="intro">
+<p><b>现有游戏与素材足够起步 B 和 C；D 的导航与基础前置条件任务也能复用。D 的记忆任务需要改变信息呈现和关卡结构。</b></p>
+<p>A 是已经可玩的课程游戏；B、C、D 是后续 AI 研究路线。当前工程尚未接入外部智能体。这次完成的是工程检查和实施说明，A1.0 的课程包保持冻结。</p>
+</div>
+<ol class="flow" aria-label="A 到 D 的路线">
+<li><b>A · 人来玩</b>你按 WASD、Shift、E</li>
+<li><b>B · 程序能控制</b>Python 发动作、收画面</li>
+<li><b>C · 模型看图玩</b>AI 自己判断下一步</li>
+<li><b>D · 检验能力</b>比较记忆、规划与成本</li>
+</ol>
+<nav class="route" aria-label="跳转到详细阶段">
+<a href="#ready"><b>资源检查</b>能复用什么、缺什么</a>
+<a href="#b"><b>B · 接遥控</b>8 张任务卡</a>
+<a href="#c"><b>C · 看图行动</b>6 张任务卡</a>
+<a href="#d"><b>D · 做对照实验</b>6 张任务卡</a>
+</nav>
+
+<section id="ready">
+<h2>现有资源：美术够用，AI 接口还要补</h2>
+<div class="check">
+<article><h3>机器人与动作 · 可复用</h3><p>移动、滚动与转头、冲刺、碰撞、触电失速已存在。<code>PlayerMotor</code> 提供移动输入与冲刺请求；AI 可以操控现在这一个 M-07。</p></article>
+<article><h3>物体与完整任务 · 可复用</h3><p>两种电芯、充电架、回收柜、发电机、三个随机港口、通电动画与登船交互已组成“识别 → 搬运 → 安装 → 撤离”。</p></article>
+<article><h3>美术素材 · 足够起步</h3><p>工程已导入 Kenney 的发电机、气闸、管道、平台、栏杆、货船等模型。门禁卡、符号牌、控制台可以先用现有模型与简单图标制作。</p></article>
+<article><h3>Python 通信 · 尚未接入</h3><p><code>Packages/manifest.json</code> 中没有 ML-Agents；没有实验入口、外部动作适配器和模型运行器。现有接口是基础，整条通信链仍需要实现。</p></article>
+<article><h3>截图 · 有测试先例，缺观察通道</h3><p>Windows 验证程序能捕获实际屏幕。HUD 使用 <code>ScreenSpaceOverlay</code>；接相机传感器时必须验证收到的图像确实包含约定的任务与交互信息。</p></article>
+<article><h3>重开与随机性 · 有基础，缺实验协议</h3><p>当前重开通过重新加载 Game 场景；<code>StationPlan.Create(seed)</code> 能固定需求、电芯摆放与港口。还需外部任务配置、新局编号、完整重置和动作日志。</p></article>
+</div>
+<p><b>随机不等于关卡已经丰富：</b>目前随机的是需求电芯、两个电芯所在的架子和出口。按 2 种需求 × 3 个出口 × 4 个蓝电芯位置 × 3 个橙电芯位置，这四项最多形成 72 种组合，底层墙体和道路相同。不同 seed 可能产生相同组合，D 不能仅按 seed 数字拆测试集。</p>
+<details><summary>看看当前画面，为什么它还不足以测试记忆？</summary>
+<figure><img src="screenshots/game-zh.png" alt="A1.0 实际游戏画面：整个站内可见，左上明确提示取来蓝色圆柱电芯" loading="lazy" width="1024" height="768"><figcaption>此前 A1.0 Windows 运行验证的真实截图。左上持续显示目标电芯，俯视镜头看见全站；适合入门导航，缺少“曾经看见、现在看不见”的记忆条件。</figcaption></figure>
+<p>建议的新任务：先在入口看见本局“圆形符号对应蓝电芯”的随机映射，进入另一个房间后只看见符号插槽，必须回忆或花成本返回确认。线索要离开画面，HUD 也不能继续写答案。这个任务当前尚未实现。</p>
+</details>
+
+<p class="small">检查依据：Assets/Scripts 下的 PlayerMotor、HumanInput、PlayerInteraction、RepairGame、StationPlan、GameFlow、GameHud、StationSmokeRun；Packages/manifest.json；Assets/ThirdParty/KenneySpaceKit；既有 Windows 截图。现有自动验收部分使用内部坐标与导航辅助，是游戏测试，不能算视觉 AI 已经会玩。</p>
+</section>
+
+<section id="b">
+<h2>B：把游戏接成可控的实验环境</h2>
+<p><b>B 的成果：Python 能可靠地操作 M-07、看到画面并开始下一局。</b>先由固定脚本发出“向前走一小段、停、冲刺一次、交互一次”，检查通信、控制、截图和重置。</p>
+<h3>用现有游戏具体做一次</h3>
+<ol>
+<li>Python 选择任务配置与 seed，启动实验模式；Unity 生成明确的新局。</li>
+<li>Python 收到当前 RGB 图像。人只看收到的图，也能认出机器人、电芯和约定的任务信息。</li>
+<li>Python 发出合法动作，Unity 经现有控制器执行短时间，再返回更新的图像。</li>
+<li>重复几次，再重开。机器人、门、电芯、速度、冷却、粒子、计时和待执行动作恢复到新局状态。</li>
+</ol>
+<p>动作最初按 V3 分成三个选择：<b>停/前/后/左/右、是否冲刺、是否交互</b>。方向保持短时间；冲刺和交互每条指令只触发一次。按 E 与 AI 交互仍使用同一套游戏规则。</p>
+<details><summary>B1–B8：实际要做的 8 步</summary><ol>
+<li><b>B1 · 隔离通信环境：</b>核对 C# 包与 Python SDK 的兼容组合并锁定版本。优先装通信依赖，确认能导入 <code>UnityEnvironment</code>、Unity 无新编译错误。</li>
+<li><b>B2 · 官方示例排错：</b>有安装故障时，用官方示例验证工具链，再回到自己的游戏。示例承担排错，不计为自己的主要成果。</li>
+<li><b>B3 · 实验入口与适配：</b>新增 Lab 模式，沿用玩法规则。人工输入与外部输入互斥，否则 <code>HumanInput.Update</code> 会覆盖 AI 移动。物理步进只保留一个执行者。</li>
+<li><b>B4 · 动作与时间：</b>实现三组离散动作，明确一次动作执行多少模拟时间。给新局和动作编号；重复、过期或上一局指令不能再次执行。</li>
+<li><b>B5 · 视觉观察：</b>以 RGB 512×512 作为初始候选，检查方向、时效、文字与物体辨识度，再调整构图和分辨率。禁止把目标坐标、对象答案或隐藏状态当作视觉输入。</li>
+<li><b>B6 · 带配置重置：</b>做本项目的 <code>reset(task_config, seed)</code> 包装，恢复全部状态并等待新局准备好。该签名是我们的协议，不是 SDK 原生接口。</li>
+<li><b>B7 · 日志与裁判隔离：</b>保存每步图片、动作、模拟时间、真实事件和结束原因。策略只收到约定观察；内部完成状态留给独立裁判。</li>
+<li><b>B8 · 无模型压力测试：</b>多局运行固定与随机动作，检查重置、重复指令和截图对应关系。随机策略不要求通关，接口错误必须能解释。</li>
+</ol></details>
+<p class="outcome"><b>B 完成标准：</b>一个 Python 入口能连续开局、发动作、得到新画面与结束状态；日志能逐步复查，人工模式仍能独立运行。</p>
+<p>通信底座优先参考 <a href="https://docs.unity3d.com/Packages/com.unity.ml-agents@4.0/manual/Python-LLAPI-Documentation.html">Unity ML-Agents Low-Level API</a>。它提供动作、观察和环境重置；一次 <code>step</code> 推进到智能体再次请求决策，不保证等于一个渲染帧。安装前依据 <a href="https://docs.unity3d.com/Packages/com.unity.ml-agents@4.0/manual/Installation.html">官方安装说明</a> 核对实际发布版本，不仅按 Git 标签猜兼容性。</p>
+</section>
+
+<section id="c">
+<h2>C：让视觉模型根据画面决定怎么走</h2>
+<p><b>C 的成果：AI 自己玩出一段可以复查的任务过程。</b>给它画面和任务：“找到需要的电芯，安装后去亮起的港口登船。”模型选择动作，Unity 执行，再把新画面交回模型。</p>
+<ol class="flow" aria-label="视觉智能体循环">
+<li><b>1 · 看</b>截图与允许的任务信息</li>
+<li><b>2 · 想</b>判断当前子目标</li>
+<li><b>3 · 做</b>输出有限动作</li>
+<li><b>4 · 核对</b>新画面与真实结果</li>
+</ol>
+<p>例如：看见蓝电芯 → 小步走近 → 看见拾取提示后交互 → 携带物变化 → 朝发电机走 → 安装 → 等待通电 → 找绿色支路和开启港口 → 靠近并登船。<b>看错、走偏或冲过头，也要留下过程。</b>这些是待验证行为，不是已实现的演示。</p>
+<details><summary>C1–C6：实际要做的 6 步</summary><ol>
+<li><b>C1 · 假模型：</b>先返回固定动作，验证缺字段、多字段、非法方向、超时和旧局回应会被拒绝。模型输出只作动作数据，不当作代码执行。</li>
+<li><b>C2 · 一个真实视觉模型：</b>接收图片、任务与有限历史，输出统一动作。密钥放环境变量；记录模型与提示版本，换模型时不改 Unity。</li>
+<li><b>C3 · 最小闭环：</b>先验证一个房间、一个明显目标的看图移动，再做拾取、安装与完整救援。先跑小批任务，保留失败，不用一条成功录像代替测试。</li>
+<li><b>C4 · 局内记忆：</b>记录“哪一帧看见电芯、尝试过什么、下一目标是什么”。记忆来自画面或自己的动作；新局清空，不从 Unity 内部读取答案。</li>
+<li><b>C5 · 预算与恢复：</b>限制动作、调用、费用、超时与重试。模型服务断连时能停下来；重开后不能执行迟到回应。</li>
+<li><b>C6 · 冻结 Demo：</b>固定游戏、相机、动作、提示与记忆格式。交付运行入口、完整轨迹和成功及失败示例，作为 D 的比较底座。</li>
+</ol></details>
+<p><b>时间模式要说明：</b>入门时建议模型思考期间暂停模拟，拿到动作再推进，这测按步骤决策。以后可另做实时模式，让放电周期继续运行。两种结果分别记录，服务等待时间不能混成机器人决策能力。</p>
+<p class="outcome"><b>C 完成标准：</b>模型通过实际图像输出合法动作，完成最小任务闭环；成功与失败可重放，费用与超时受控。完整任务成功率由实际试验填写。</p>
+<p>可以借鉴作者项目 <a href="https://github.com/lmgame-org/GamingAgent">GamingAgent</a> 的游戏适配、模型运行与评测组织，并按 <a href="https://github.com/lmgame-org/GamingAgent/blob/main/LICENSE">MIT 授权</a> 复用合适代码；我们的 Unity 接口仍需适配。<a href="https://arxiv.org/abs/2505.15146">lmgame-Bench 论文</a> 讨论感知、记忆、提示变化与游戏评测可靠性，可帮助设计实验。</p>
+</section>
+
+<section id="d">
+<h2>D：证明哪些设计有效，花了多少代价</h2>
+<p><b>D 的成果：可复现的实验和有证据的结论。</b>同一个模型，在相同任务条件下，比较加入记忆、改变重规划时机前后，成功率、动作数、调用次数和费用怎么变化。结论可以是没有改善，也可以是某类任务改善、另一类退步。</p>
+<h3>先做三个任务族</h3>
+<ol>
+<li><b>导航：</b>找亮起的目标港口，避开箱子和放电区，到达后交互。机器人、碰撞、港口和危险区可复用；需任务配置与独立验收。</li>
+<li><b>前置条件：</b>当前“正确电芯 → 启动发电机 → 开港口 → 登船”提供基础。更复杂版本可做“门禁卡 → 维修间 → 电芯 → 安装 → 撤离”，增加门禁卡与锁门逻辑。</li>
+<li><b>记忆：</b>先看本局随机符号与电芯对应关系，再去另一房间选择。需线索牌、局部观察与线索离开视野的条件；HUD 只保留任务目的，返回查看有明确成本或限制。</li>
+</ol>
+<p>第三类是当前最明显的缺口。只删目标文字，却让线索牌永远出现在整幅俯视画面里，仍不足以检验记忆。改变信息条件时要保证可解，不能靠藏掉所有提示增加难度。</p>
+<h3>比较的三组是什么？</h3>
+<ul class="compare">
+<li><b>P0 · 当前图像：</b>每次使用当前图像与允许的任务说明，不保留跨步记忆；按固定节奏决策。</li>
+<li><b>P1 · 有局内记忆：</b>加入有长度上限、来自既往观察的记忆，其余条件和决策节奏保持一致。P1 与 P0 比较记忆的作用。</li>
+<li><b>P2 · 有记忆，按观察到的事件重规划：</b>复用 P1 的记忆，看到拾取成功、门开启、路线受阻等事件时更新计划。P2 与 P1 比较调度的作用；事件来自合法观察，不能读取隐藏状态替 AI 判断。</li>
+</ul>
+<p>“记忆”是运行器保留并交给模型的历史信息，不是重新训练模型参数。三组用同一模型、同一套任务和动作、相同上限预算；P2 不预设一定更好。</p>
+<details><summary>D1–D6：实际要做的 6 步</summary><ol>
+<li><b>D1 · 三个任务族：</b>实现导航、前置条件与记忆的实际规则，保证需要不同能力且存在合法完成路径。</li>
+<li><b>D2 · 划分关卡：</b>开发集用于调试，验证集用于选择方案，最终测试集封存。按布局和任务规则排重；相同布局的不同 seed 不能散到两侧。</li>
+<li><b>D3 · 控制条件：</b>冻结模型、提示、动作与预算；分别比较 P1-P0 和 P2-P1，明确机制差异，不提前填提升百分比。</li>
+<li><b>D4 · 批量运行：</b>先小规模检查流程，再按预算扩展。相同任务配置配对比较并重复，记录成功率、动作、调用、tokens、费用、模拟时间和真实等待时间。</li>
+<li><b>D5 · 失败分析：</b>用轨迹区分看错、忘记、顺序错误、移动失控、通信故障、环境问题与无法判断。保留全部尝试；服务错误单独报告，不能偷偷删掉。</li>
+<li><b>D6 · 可复现成果：</b>提供任务配置、运行方法、日志与结果、限制和代表录像。每个功能与数字对应证据；研究版继续保留课程 A1.0。</li>
+</ol></details>
+<p class="outcome"><b>D 完成标准：</b>别人能按方法运行比较，找到结论对应的记录，并理解适用任务、条件与费用限制。它是一项实验成果，不要求 AI 每局都通关。</p>
+</section>
+
+<section id="next">
+<h2>现在实际怎么起步？</h2>
+<p><b>下一项技术工作建议是 B 的最小桥接：</b>Python 启动同一游戏 → 收到一张带必要信息的真实图 → 发出一次向前移动 → 收到变化后的图 → 重开并确认状态干净。先验证这一小环，再做完整任务控制。</p>
+<p>你决定研究问题、成功条件和关卡是否认可；我可以落实 Unity 适配、Python 运行器、记录与测试。做到 C 时再确定模型、凭据和调用预算。老师对 A 作业的反馈可继续记录，不需为 B-D 先重做美术。</p>
+<p>B-D 是项目 V3 的研究路线。课程 A 的作业要求、公开 Git 链接与复盘提交仍按老师 PDF 单独核对；目前没有证据表明老师额外要求 B-D。</p>
+<details><summary>论文和代码应该看哪几个？</summary><ul>
+<li><b>B：</b><a href="https://docs.unity3d.com/Packages/com.unity.ml-agents@4.0/manual/Python-LLAPI-Documentation.html">Unity 官方 Low-Level API</a> 与 <a href="https://docs.unity3d.com/Packages/com.unity.ml-agents@4.0/manual/Learning-Environment-Design-Agents.html">观察和动作设计</a>，先学接口。</li>
+<li><b>C / D：</b><a href="https://arxiv.org/abs/2505.15146">lmgame-Bench 论文</a>、<a href="https://github.com/lmgame-org/GamingAgent">GamingAgent 作者代码</a>，借鉴观察、适配、记忆与评测结构。</li>
+<li><b>后续补充：</b><a href="https://arxiv.org/abs/2305.16291">Voyager 论文</a>、<a href="https://github.com/MineDojo/Voyager">作者代码</a> 展示可执行技能库与反馈迭代。它面向 Minecraft/Mineflayer，不能直接当作本游戏的纯视觉接口；代码采用 <a href="https://github.com/MineDojo/Voyager/blob/main/LICENSE">MIT 授权</a>。</li>
+</ul></details>
+<p class="small">顺序依据 docs/plan-v3/configs/task_cards.json 的 B1-B8、C1-C6、D1-D6。资源结论来自源码与系统只读检查；关卡建议和适配范围是针对本项目的设计判断。此页面没有实施 B-D 或生成实验成绩。</p>
+</section>
+<p><a href="../index.html">返回课程材料与复用工具</a></p>
+</main></body></html>

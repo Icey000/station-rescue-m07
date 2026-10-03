@@ -1,115 +1,40 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>停电救援：M-07 | Station Rescue: M-07</title>
-  <style>
-    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #07111f; color: #e8f1ff; }
-    main { width: min(92vw, 760px); text-align: center; }
-    h1 { margin-bottom: .25rem; }
-    .subtitle { margin-top: 0; color: #9fb4ce; }
-    #hud { display: flex; justify-content: space-between; gap: 1rem; margin: 1rem 0 .5rem; padding: .75rem 1rem; background: #10243c; border: 1px solid #294b70; border-radius: 10px; }
-    canvas { width: 100%; max-width: 720px; aspect-ratio: 12 / 7; display: block; background: #0c1a2a; border: 2px solid #4c7097; border-radius: 10px; image-rendering: pixelated; }
-    button { margin-top: 1rem; padding: .65rem 1rem; border: 0; border-radius: 8px; background: #2d8cff; color: white; cursor: pointer; font-weight: 700; }
-    button:hover { background: #55a4ff; }
-    #message { min-height: 1.5rem; color: #ffd166; font-weight: 700; }
-    small { color: #8fa5bd; }
-  </style>
-</head>
-<body>
-  <main>
-    <h1>停电救援：M-07</h1>
-    <p class="subtitle">Station Rescue: M-07 · A1.0</p>
-    <div id="hud"><span id="status">电池：0 / 3</span><span id="lives">生命：3</span></div>
-    <canvas id="game" width="720" height="420" aria-label="M-07 游戏画面"></canvas>
-    <p id="message">收集所有应急电池，然后前往蓝色出口。</p>
-    <button id="restart">重新开始</button>
-    <p><small>方向键 / WASD 移动 · 绿色：救援员 · 黄色：电池 · 红色：危险 · 蓝色：出口</small></p>
-  </main>
-  <script>
-    const canvas = document.querySelector('#game');
-    const ctx = canvas.getContext('2d');
-    const status = document.querySelector('#status');
-    const livesText = document.querySelector('#lives');
-    const message = document.querySelector('#message');
-    const keys = new Set();
-    const start = { x: 48, y: 190 };
-    const exit = { x: 650, y: 165, w: 42, h: 90 };
-    const hazards = [
-      { x: 170, y: 70, w: 105, h: 55 },
-      { x: 345, y: 285, w: 120, h: 55 },
-      { x: 505, y: 75, w: 85, h: 58 }
-    ];
-    let player, batteries, lives, running;
-
-    function reset() {
-      player = { x: start.x, y: start.y, size: 24, speed: 3.4, invulnerable: 0 };
-      batteries = [
-        { x: 125, y: 80, collected: false },
-        { x: 390, y: 105, collected: false },
-        { x: 555, y: 320, collected: false }
-      ];
-      lives = 3;
-      running = true;
-      message.textContent = '收集所有应急电池，然后前往蓝色出口。';
-      updateHud();
-    }
-
-    function updateHud() {
-      const collected = batteries.filter(b => b.collected).length;
-      status.textContent = `电池：${collected} / ${batteries.length}`;
-      livesText.textContent = `生命：${lives}`;
-    }
-
-    function intersects(a, b) {
-      return a.x < b.x + b.w && a.x + a.size > b.x && a.y < b.y + b.h && a.y + a.size > b.y;
-    }
-
-    function update() {
-      if (!running) return;
-      let dx = 0, dy = 0;
-      if (keys.has('arrowleft') || keys.has('a')) dx--;
-      if (keys.has('arrowright') || keys.has('d')) dx++;
-      if (keys.has('arrowup') || keys.has('w')) dy--;
-      if (keys.has('arrowdown') || keys.has('s')) dy++;
-      if (dx && dy) { dx *= .707; dy *= .707; }
-      player.x = Math.max(8, Math.min(canvas.width - player.size - 8, player.x + dx * player.speed));
-      player.y = Math.max(8, Math.min(canvas.height - player.size - 8, player.y + dy * player.speed));
-      if (player.invulnerable > 0) player.invulnerable--;
-
-      batteries.forEach(b => {
-        const target = { x: b.x - 8, y: b.y - 8, w: 16, h: 16 };
-        if (!b.collected && intersects(player, { ...target, size: 0 })) b.collected = true;
-      });
-      if (player.invulnerable === 0 && hazards.some(h => intersects(player, h))) {
-        lives--;
-        player.x = start.x; player.y = start.y; player.invulnerable = 90;
-        if (lives <= 0) { running = false; message.textContent = '救援失败，点击“重新开始”再次尝试。'; }
-      }
-      const collected = batteries.every(b => b.collected);
-      if (collected && intersects(player, exit)) { running = false; message.textContent = '救援成功！M-07 重新恢复了应急供电。'; }
-      updateHud();
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#0c1a2a'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = '#183653'; ctx.lineWidth = 1;
-      for (let x = 0; x < canvas.width; x += 30) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
-      for (let y = 0; y < canvas.height; y += 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
-      hazards.forEach(h => { ctx.fillStyle = '#9d3348'; ctx.fillRect(h.x, h.y, h.w, h.h); ctx.fillStyle = '#e66b78'; ctx.font = '14px sans-serif'; ctx.fillText('危险', h.x + 30, h.y + 32); });
-      ctx.fillStyle = '#2676c9'; ctx.fillRect(exit.x, exit.y, exit.w, exit.h); ctx.fillStyle = '#c7e6ff'; ctx.font = '14px sans-serif'; ctx.fillText('出口', exit.x + 7, exit.y + 48);
-      batteries.forEach(b => { if (!b.collected) { ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(b.x, b.y, 9, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#fff1b8'; ctx.fillRect(b.x - 3, b.y - 5, 6, 10); } });
-      if (player.invulnerable % 12 < 6) { ctx.fillStyle = '#57e389'; ctx.fillRect(player.x, player.y, player.size, player.size); ctx.fillStyle = '#082016'; ctx.fillRect(player.x + 5, player.y + 6, 4, 4); ctx.fillRect(player.x + 15, player.y + 6, 4, 4); }
-    }
-
-    function loop() { update(); draw(); requestAnimationFrame(loop); }
-    window.addEventListener('keydown', e => { const key = e.key.toLowerCase(); if (['arrowleft','arrowright','arrowup','arrowdown','w','a','s','d'].includes(key)) { e.preventDefault(); keys.add(key); } });
-    window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-    document.querySelector('#restart').addEventListener('click', reset);
-    reset(); loop();
-  </script>
-</body>
-</html>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>停电救援：M-07 / Station Rescue: M-07</title>
+<style>
+:root{color-scheme:light;--bg:#f4f6f2;--ink:#25312b;--muted:#5b6a60;--line:#cdd7cd;--accent:#25634a}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.7 system-ui,'Microsoft YaHei',sans-serif}main{max-width:1080px;margin:auto;padding:28px 24px 60px}header{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}h1{font-size:34px;line-height:1.3;margin:24px 0 12px}h2{font-size:24px;line-height:1.4;margin:30px 0 12px}p{margin:12px 0}a{color:var(--accent);overflow-wrap:anywhere}.muted{color:var(--muted)}.small{font-size:14px}.language{display:flex;gap:8px}button{font:inherit;padding:8px 14px;background:transparent;color:var(--ink);border:1px solid var(--line);cursor:pointer}button[aria-pressed=true]{color:white;background:var(--accent);border-color:var(--accent)}button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}.actions{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}.actions a{border:1px solid var(--line);padding:9px 14px;text-decoration:none}.actions a.primary{background:var(--accent);color:white;border-color:var(--accent)}img{display:block;width:100%;height:auto;background:#061016}.hero{margin:25px 0}.gallery{display:grid;grid-template-columns:1fr 1fr;gap:24px}.gallery figure{margin:0}figcaption{font-size:14px;color:var(--muted);margin-top:8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}section{border-top:1px solid var(--line);padding-top:8px;margin-top:28px}li{margin:7px 0}code{background:#e6ede4;padding:2px 5px;font-size:.92em;overflow-wrap:anywhere}[hidden]{display:none!important}footer{margin-top:35px;padding-top:15px;border-top:1px solid var(--line)}@media(max-width:650px){main{padding:20px 18px 45px}h1{font-size:28px}.gallery,.grid{grid-template-columns:1fr}.actions a{width:100%;text-align:center}}
+</style></head>
+<body><main>
+<header><span class="muted small">UNITY 3D · COURSE A1.0</span><div class="language" role="group" aria-label="Language"><button type="button" id="lang-zh" aria-pressed="true">中文</button><button type="button" id="lang-en" aria-pressed="false">English</button></div></header>
+<div data-lang="zh">
+<h1>停电救援：M-07</h1><p>停电让一台维修机器人被困在货运站。识别电芯、磁吸搬运、恢复应急供电，再沿亮起的线路前往救援港口。</p><p class="muted">A1.0 对应已验证的 V2.1 游戏；本页用于项目介绍。</p>
+</div>
+<div data-lang="en" hidden>
+<h1>Station Rescue: M-07</h1><p>A blackout traps a maintenance robot in a cargo station. Identify and carry the right battery, restore emergency power, then follow the illuminated route to a rescue dock.</p><p class="muted">A1.0 freezes the verified V2.1 game. This page introduces the project.</p>
+</div>
+<figure class="hero"><img id="hero" src="docs/screenshots/game-zh.png" alt="M-07 与空间站 / M-07 in the station" width="1280" height="720"><figcaption data-lang="zh">实际 Windows 游戏截图；菜单与暂停页支持中英切换。</figcaption><figcaption data-lang="en" hidden>Actual Windows gameplay. Change the game language in the main or pause menu.</figcaption></figure>
+<div class="actions" data-lang="zh"><a class="primary" href="README.md">中文 README</a><a href="https://github.com/Icey000/station-rescue-m07">GitHub 项目</a><a href="DesignKit/index.html">游戏设计工作台</a><a href="docs/ai-roadmap.html">B / C / D 研究路线</a></div>
+<div class="actions" data-lang="en" hidden><a class="primary" href="README.en.md">English README</a><a href="https://github.com/Icey000/station-rescue-m07">GitHub repository</a><a href="DesignKit/index.html">Design workbench · Chinese</a><a href="docs/ai-roadmap.html">AI roadmap · Chinese</a></div>
+<section class="grid">
+<div data-lang="zh"><h2>核心玩法</h2><ol><li>根据发电机插槽识别所需电芯。</li><li>拾取并搬运，绕开周期放电的电缆。</li><li>安装正确电芯，让绿色能量沿线路传播。</li><li>在本局开启的港口手动登船。</li></ol></div>
+<div data-lang="en" hidden><h2>Gameplay loop</h2><ol><li>Identify the battery required by the generator.</li><li>Pick it up, carry it, and avoid periodic arcs.</li><li>Install it and watch power travel along the route.</li><li>Interact to board at this run's selected dock.</li></ol></div>
+<div data-lang="zh"><h2>操作与运行</h2><p>WASD / 方向键移动；Shift 冲刺；E 或附近按钮交互；Esc 暂停；R 重开。</p><p>用 Unity 6000.6.4f1 打开仓库根目录，进入 <code>Assets/Scenes/Menu.unity</code> 后 Play。Windows 完整包解压后运行 <code>StationRescue.exe</code>。</p></div>
+<div data-lang="en" hidden><h2>Controls and running</h2><p>WASD / arrows move; Shift boosts; E or the nearby button interacts; Esc pauses; R restarts.</p><p>Open the repository in Unity 6000.6.4f1, open <code>Assets/Scenes/Menu.unity</code>, then press Play. For the complete Windows package, extract it and run <code>StationRescue.exe</code>.</p></div>
+</section>
+<section>
+<h2 data-lang="zh">看得见的动作与供电</h2><h2 data-lang="en" hidden>Visible movement and power</h2>
+<div class="gallery"><figure><img src="docs/screenshots/boost.png" alt="推进器冲刺 / Thruster boost" loading="lazy" width="1280" height="720"><figcaption data-lang="zh">冲刺尾焰、拖尾与冷却反馈。</figcaption><figcaption data-lang="en" hidden>Thruster flame, trail, and cooldown feedback.</figcaption></figure><figure><img src="docs/screenshots/power-flow.png" alt="通电线路 / Power route" loading="lazy" width="1280" height="720"><figcaption data-lang="zh">安装电芯后，能量沿选中支路传播。</figcaption><figcaption data-lang="en" hidden>Power propagates along the selected branch after installation.</figcaption></figure></div>
+</section>
+<section>
+<div data-lang="zh"><h2>验证与下一阶段</h2><p>既有 Editor 回归 317 项通过；Windows 主程序与解压包各 176 项通过；干净 clone 的首次导入、编译与回归已验证。报告在 <a href="docs/validation/clean-checkout-validation.json">验收记录</a>。</p><p>后续 B 接 Python 控制，C 接视觉模型，D 做记忆与重规划实验；当前尚未实现。</p></div>
+<div data-lang="en" hidden><h2>Validation and next steps</h2><p>Existing Editor regression: 317 checks passed. Windows and extracted-package runs: 176 checks each. Clean-clone import, compilation, and regression were verified. See the <a href="docs/validation/clean-checkout-validation.json">validation record</a>.</p><p>Planned work: B adds Python control, C adds visual-model gameplay, and D tests memory and replanning. These features are not implemented yet.</p></div>
+</section>
+<footer><p data-lang="zh" class="small muted">Kenney 素材采用 CC0，原始声明随源码保留。开发与文档使用 AI 辅助。<a href="docs/ASSETS.md">素材来源</a> · <a href="examples/browser-prototype/index.html">早期二维浏览器小样</a></p><p data-lang="en" class="small muted" hidden>Kenney assets use CC0; original notices are retained. Development and documentation used AI assistance. <a href="docs/ASSETS.md">Asset credits</a> · <a href="examples/browser-prototype/index.html">Earlier 2D browser prototype</a></p></footer>
+</main>
+<script>
+function setLanguage(language){const selected=language==='en'?'en':'zh';document.documentElement.lang=selected==='en'?'en':'zh-CN';document.querySelectorAll('[data-lang]').forEach(node=>{node.hidden=node.dataset.lang!==selected;});document.getElementById('lang-zh').setAttribute('aria-pressed',String(selected==='zh'));document.getElementById('lang-en').setAttribute('aria-pressed',String(selected==='en'));document.getElementById('hero').src=selected==='en'?'docs/screenshots/game-en.png':'docs/screenshots/game-zh.png';document.title=selected==='en'?'Station Rescue: M-07':'停电救援：M-07';try{localStorage.setItem('station-rescue-project-language',selected);}catch{}}
+document.getElementById('lang-zh').addEventListener('click',()=>setLanguage('zh'));document.getElementById('lang-en').addEventListener('click',()=>setLanguage('en'));let storedLanguage='zh';try{storedLanguage=localStorage.getItem('station-rescue-project-language')||'zh';}catch{}setLanguage(storedLanguage);
+</script>
+</body></html>
