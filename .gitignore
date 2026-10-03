@@ -1,0 +1,19 @@
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Build and export folders
+build/
+dist/
+export/
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
